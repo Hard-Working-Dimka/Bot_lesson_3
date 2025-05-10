@@ -1,6 +1,9 @@
+from environs import env
 from google.cloud import api_keys_v2
 from google.cloud.api_keys_v2 import Key
 from google.cloud import dialogflow
+
+import json
 
 
 def detect_intent_texts(project_id, session_id, text, language_code):
@@ -31,8 +34,45 @@ def create_api_key(project_id: str, suffix: str) -> Key:
     return response
 
 
-# if __name__ == "__main__":
-    # create_api_key(per, "firs")
+def create_intent(project_id, display_name, training_phrases_parts, message_text):
+    from google.cloud import dialogflow
+
+    intents_client = dialogflow.IntentsClient()
+
+    parent = dialogflow.AgentsClient.agent_path(project_id)
+    training_phrases = []
+    for training_phrases_part in training_phrases_parts:
+        part = dialogflow.Intent.TrainingPhrase.Part(text=training_phrases_part)
+        training_phrase = dialogflow.Intent.TrainingPhrase(parts=[part])
+        training_phrases.append(training_phrase)
+
+    text = dialogflow.Intent.Message.Text(text=[message_text])
+    message = dialogflow.Intent.Message(text=text)
+
+    intent = dialogflow.Intent(
+        display_name=display_name, training_phrases=training_phrases, messages=[message]
+    )
+
+    response = intents_client.create_intent(
+        request={"parent": parent, "intent": intent}
+    )
+
+
+if __name__ == "__main__":
+    env.read_env()
+    PROJECT_ID = env('PROJECT_ID')
+
+
+    with open('questions.json', 'r', encoding='utf8') as my_file:
+        questions_json = my_file.read()
+
+    questions = json.loads(questions_json)
+
+    work_questions = questions['Устройство на работу']['questions']
+    work_answer = questions['Устройство на работу']['answer']
+
+    create_intent(PROJECT_ID,'Как устроиться к вам на работу', work_questions, work_answer)
+# create_api_key(per, "firs")
 
 # per="tgbot-459318"
 # fir = "5316948794"
