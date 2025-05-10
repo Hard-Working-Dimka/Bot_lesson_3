@@ -2,18 +2,20 @@ from environs import env
 import random
 import vk_api as vk
 from vk_api.longpoll import VkLongPoll, VkEventType
+from dialog_flow_instruments import detect_intent_texts
 
 
 def echo(event, vk_api):
     vk_api.messages.send(
         user_id=event.user_id,
-        message=event.text,
+        message=detect_intent_texts(PROJECT_ID, event.user_id, event.text, "ru"),
         random_id=random.randint(1, 1000)
     )
 
 
 if __name__ == "__main__":
     env.read_env()
+    PROJECT_ID = env("PROJECT_ID")
     vk_session = vk.VkApi(token=env('VK_API_KEY'))
     vk_api = vk_session.get_api()
     longpoll = VkLongPoll(vk_session)
