@@ -8,10 +8,11 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 from environs import env
+from dialog_flow_instruments import detect_intent_texts
 
 env.read_env()
-TOKEN = env("BOT_TOKEN")
-
+TOKEN = env('BOT_TOKEN')
+PROJECT_ID = env('PROJECT_ID')
 dp = Dispatcher()
 
 
@@ -21,16 +22,14 @@ async def command_start_handler(message: Message):
 
 
 @dp.message()
-async def echo_handler(message: Message) -> None:
+async def echo_handler(message: Message):
     try:
-        # Send a copy of the received message
-        await message.send_copy(chat_id=message.chat.id)
+        await message.answer(detect_intent_texts(PROJECT_ID, message.from_user.id, message.text, "ru"))
     except TypeError:
-        # But not all the types is supported to be copied so need to handle it
         await message.answer("Nice try!")
 
 
-async def main() -> None:
+async def main():
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
     await dp.start_polling(bot)
