@@ -6,11 +6,13 @@ from dialog_flow_instruments import detect_intent_texts
 
 
 def echo(event, vk_api):
-    vk_api.messages.send(
-        user_id=event.user_id,
-        message=detect_intent_texts(PROJECT_ID, event.user_id, event.text, "ru"),
-        random_id=random.randint(1, 1000)
-    )
+    message = detect_intent_texts(PROJECT_ID, event.user_id, event.text, "ru")
+    if message:
+        vk_api.messages.send(
+            user_id=event.user_id,
+            message=message,
+            random_id=random.randint(1, 1000)
+        )
 
 
 if __name__ == "__main__":

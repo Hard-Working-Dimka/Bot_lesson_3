@@ -6,7 +6,7 @@ from google.cloud import dialogflow
 import json
 
 
-def detect_intent_texts(project_id, session_id, text, language_code):
+def detect_intent_texts_for_vk(project_id, session_id, text, language_code):
     session_client = dialogflow.SessionsClient()
     session = session_client.session_path(project_id, session_id)
 
@@ -15,6 +15,21 @@ def detect_intent_texts(project_id, session_id, text, language_code):
     response = session_client.detect_intent(
         request={"session": session, "query_input": query_input}
     )
+    if not response.query_result.intent.is_fallback:
+        return response.query_result.fulfillment_text
+    return None
+
+
+def detect_intent_texts_for_tg(project_id, session_id, text, language_code):
+    session_client = dialogflow.SessionsClient()
+    session = session_client.session_path(project_id, session_id)
+
+    text_input = dialogflow.TextInput(text=text, language_code=language_code)
+    query_input = dialogflow.QueryInput(text=text_input)
+    response = session_client.detect_intent(
+        request={"session": session, "query_input": query_input}
+    )
+
     return response.query_result.fulfillment_text
 
 
@@ -62,7 +77,6 @@ if __name__ == "__main__":
     env.read_env()
     PROJECT_ID = env('PROJECT_ID')
 
-
     with open('questions.json', 'r', encoding='utf8') as my_file:
         questions_json = my_file.read()
 
@@ -71,7 +85,7 @@ if __name__ == "__main__":
     work_questions = questions['Устройство на работу']['questions']
     work_answer = questions['Устройство на работу']['answer']
 
-    create_intent(PROJECT_ID,'Как устроиться к вам на работу', work_questions, work_answer)
+    create_intent(PROJECT_ID, 'Как устроиться к вам на работу', work_questions, work_answer)
 # create_api_key(per, "firs")
 
 # per="tgbot-459318"
