@@ -86,10 +86,3 @@ if __name__ == "__main__":
     work_answer = questions['Устройство на работу']['answer']
 
     create_intent(PROJECT_ID, 'Как устроиться к вам на работу', work_questions, work_answer)
-# create_api_key(per, "firs")
-
-# per="tgbot-459318"
-# fir = "5316948794"
-# # create_api_key(per, "firs")
-#
-# detect_intent_texts(per, fir, ["hello"], "en-US")
