@@ -7,14 +7,8 @@ from aiogram.types import Message
 from environs import env
 from dialog_flow_instruments import detect_intent_texts_for_tg
 
-env.read_env()
 bot_dispatcher = Dispatcher()
 dev_bot_dispatcher = Dispatcher()
-dev_tg_token = env('DEV_TG_TOKEN')
-tg_token = env('TG_TOKEN')
-bot = Bot(token=tg_token)
-dev_bot = Bot(token=dev_tg_token)
-chat_id = env('CHAT_ID')
 
 
 class MyLogsHandler(logging.Handler):
