@@ -39,4 +39,4 @@ if __name__ == "__main__":
             if event.type == VkEventType.MESSAGE_NEW and event.to_me:
                 reply_from_dialogflow(event, vk_api)
     except Exception as error:
-        logger.error(error, exc_info=True)
+        logger.exception(error)
