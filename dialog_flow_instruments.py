@@ -6,7 +6,7 @@ from google.cloud import dialogflow
 import json
 
 
-def detect_intent_texts_for_vk(project_id, session_id, text, language_code):
+def detect_intent_texts(project_id, session_id, text, language_code):
     session_client = dialogflow.SessionsClient()
     session = session_client.session_path(project_id, session_id)
 
@@ -15,22 +15,12 @@ def detect_intent_texts_for_vk(project_id, session_id, text, language_code):
     response = session_client.detect_intent(
         request={"session": session, "query_input": query_input}
     )
-    if not response.query_result.intent.is_fallback:
+    if session_id[:2] == 'vk':
+        if not response.query_result.intent.is_fallback:
+            return response.query_result.fulfillment_text
+    elif session_id[:2] == 'tg':
         return response.query_result.fulfillment_text
     return None
-
-
-def detect_intent_texts_for_tg(project_id, session_id, text, language_code):
-    session_client = dialogflow.SessionsClient()
-    session = session_client.session_path(project_id, session_id)
-
-    text_input = dialogflow.TextInput(text=text, language_code=language_code)
-    query_input = dialogflow.QueryInput(text=text_input)
-    response = session_client.detect_intent(
-        request={"session": session, "query_input": query_input}
-    )
-
-    return response.query_result.fulfillment_text
 
 
 def create_api_key(project_id: str, suffix: str) -> Key:
@@ -75,14 +65,14 @@ def create_intent(project_id, display_name, training_phrases_parts, message_text
 
 if __name__ == "__main__":
     env.read_env()
-    PROJECT_ID = env('PROJECT_ID')
+    project_id = env('PROJECT_ID')
 
-    with open('questions.json', 'r', encoding='utf8') as my_file:
-        questions_json = my_file.read()
+    with open('questions.json', 'r', encoding='utf8') as file:
+        questions_json = file.read()
 
     questions = json.loads(questions_json)
 
     work_questions = questions['Устройство на работу']['questions']
     work_answer = questions['Устройство на работу']['answer']
 
-    create_intent(PROJECT_ID, 'Как устроиться к вам на работу', work_questions, work_answer)
+    create_intent(project_id, 'Как устроиться к вам на работу', work_questions, work_answer)

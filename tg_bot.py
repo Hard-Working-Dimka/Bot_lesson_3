@@ -1,59 +1,60 @@
-import asyncio
-import logging
-
-from aiogram import Bot, Dispatcher, html
-from aiogram.filters import CommandStart
-from aiogram.types import Message
+import telegram
 from environs import env
-from dialog_flow_instruments import detect_intent_texts_for_tg
+from dialog_flow_instruments import detect_intent_texts
+import logging
+from telegram import Update, ForceReply
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
-bot_dispatcher = Dispatcher()
-dev_bot_dispatcher = Dispatcher()
 
-
-class MyLogsHandler(logging.Handler):
-    def __init__(self, tg_bot, chat_id):
+class LogsHandler(logging.Handler):
+    def __init__(self, dev_bot, chat_id):
         super().__init__()
         self.chat_id = chat_id
-        self.tg_bot = tg_bot
+        self.dev_bot = dev_bot
 
     def emit(self, record):
         log_entry = self.format(record)
-        asyncio.create_task(self.tg_bot.send_message(self.chat_id, log_entry))
+        self.dev_bot.send_message(chat_id=self.chat_id, text=log_entry)
 
 
-@bot_dispatcher.message(CommandStart())
-async def command_start_handler(message: Message):
-    await message.answer(f'Привет, {html.bold(message.from_user.full_name)}!')
+def start(update: Update, context: CallbackContext):
+    user = update.effective_user
+    update.message.reply_markdown_v2(
+        fr'Hi {user.mention_markdown_v2()}\!',
+        reply_markup=ForceReply(selective=True),
+    )
 
 
-@bot_dispatcher.message()
-async def echo_handler(message: Message):
+def reply_from_dialogflow(update: Update, context: CallbackContext):
+    update.message.reply_text(
+        (detect_intent_texts(project_id, 'tg-' + str(update.effective_user.id), update.message.text, "ru")))
+
+
+def start_bot():
     try:
-        await message.answer(detect_intent_texts_for_tg(project_id, message.from_user.id, message.text, "ru"))
+        tg_bot = Updater(tg_token)
+
+        dispatcher = tg_bot.dispatcher
+        dispatcher.add_handler(CommandHandler("start", start))
+        dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, reply_from_dialogflow))
+        logger.info('Telegram bot is running.')
+
+        tg_bot.start_polling()
+        tg_bot.idle()
     except Exception as error:
-        logger_1.error(error, exc_info=True)
+        logger.exception(error)
 
 
-async def start_bots():
-    task_bot = asyncio.create_task(bot_dispatcher.start_polling(bot))
-    task_dev_bot = asyncio.create_task(dev_bot_dispatcher.start_polling(dev_bot))
-    logger_1.info('Telegram bot is running.')
-    await task_bot
-    await task_dev_bot
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     env.read_env()
     project_id = env('PROJECT_ID')
-    dev_tg_token = env('DEV_TG_TOKEN')
     chat_id = env('CHAT_ID')
     tg_token = env('TG_TOKEN')
 
-    bot = Bot(token=tg_token)
-    dev_bot = Bot(token=dev_tg_token)
+    dev_bot = telegram.Bot(token=env('DEV_TG_TOKEN'))
 
-    logger_1 = logging.getLogger('tg_bot')
-    logger_1.setLevel(level=logging.DEBUG)
-    logger_1.addHandler(MyLogsHandler(dev_bot, chat_id=chat_id))
-    asyncio.run(start_bots())
+    logger = logging.getLogger('bots')
+    logger.setLevel(level=logging.DEBUG)
+    logger.addHandler(LogsHandler(dev_bot, chat_id=chat_id))
+
+    start_bot()
