@@ -25,18 +25,20 @@ def start(update: Update, context: CallbackContext):
     )
 
 
-def reply_from_dialogflow(update: Update, context: CallbackContext):
+def reply_from_dialogflow(update: Update, context: CallbackContext, project_id):
     update.message.reply_text(
-        (detect_intent_texts(project_id, 'tg-' + str(update.effective_user.id), update.message.text, "ru")))
+        (detect_intent_texts(project_id, f'tg-{update.effective_user.id}', update.message.text, "ru")))
 
 
-def start_bot():
+def start_bot(tg_token, project_id):
     try:
         tg_bot = Updater(tg_token)
 
         dispatcher = tg_bot.dispatcher
         dispatcher.add_handler(CommandHandler("start", start))
-        dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, reply_from_dialogflow))
+        dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command,
+                                              lambda update, context: reply_from_dialogflow(update, context,
+                                                                                            project_id)))
         logger.info('Telegram bot is running.')
 
         tg_bot.start_polling()
@@ -57,4 +59,4 @@ if __name__ == '__main__':
     logger.setLevel(level=logging.DEBUG)
     logger.addHandler(LogsHandler(dev_bot, chat_id=chat_id))
 
-    start_bot()
+    start_bot(tg_token, project_id)
